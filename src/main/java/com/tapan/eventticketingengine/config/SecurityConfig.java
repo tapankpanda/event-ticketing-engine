@@ -2,6 +2,7 @@ package com.tapan.eventticketingengine.config;
 
 import com.tapan.eventticketingengine.auth.security.JwtAuthenticationFilter;
 import com.tapan.eventticketingengine.auth.security.JwtService;
+import com.tapan.eventticketingengine.auth.security.RestAccessDeniedHandler;
 import com.tapan.eventticketingengine.auth.security.RestAuthenticationEntryPoint;
 import com.tapan.eventticketingengine.auth.service.CustomUserDetailsService;
 
@@ -24,13 +25,14 @@ public class SecurityConfig {
             DaoAuthenticationProvider authenticationProvider,
             JwtService jwtService,
             CustomUserDetailsService userDetailsService,
-            RestAuthenticationEntryPoint authenticationEntryPoint
+            RestAuthenticationEntryPoint authenticationEntryPoint,
+            RestAccessDeniedHandler accessDeniedHandler
     ) throws Exception {
 
         http
                 .csrf(AbstractHttpConfigurer::disable)
 
-                // This application uses JWT, not browser-based login.
+                // This application uses JWT, not browser-based login
                 .httpBasic(AbstractHttpConfigurer::disable)
                 .formLogin(AbstractHttpConfigurer::disable)
 
@@ -41,29 +43,48 @@ public class SecurityConfig {
                         )
                 )
 
-                // Register the database-backed authentication provider.
+                // Register the database-backed authentication provider
                 .authenticationProvider(authenticationProvider)
 
-                // Return JSON for unauthenticated protected requests.
-                .exceptionHandling(exception ->
-                        exception.authenticationEntryPoint(
-                                authenticationEntryPoint
-                        )
+                // Return structured JSON for 401 and 403 responses.
+                .exceptionHandling(exception -> exception
+                        .authenticationEntryPoint(authenticationEntryPoint)
+                        .accessDeniedHandler(accessDeniedHandler)
                 )
 
-                // Public and protected endpoint rules.
+                // Public and protected endpoint rules
                 .authorizeHttpRequests(auth -> auth
 
+                        // Public authentication endpoints
                         .requestMatchers(
                                 HttpMethod.POST,
                                 "/api/v1/auth/register",
                                 "/api/v1/auth/login"
                         ).permitAll()
 
+                        // Public event and ticket-category browsing
+                        .requestMatchers(
+                                HttpMethod.GET,
+                                "/api/v1/events",
+                                "/api/v1/events/**",
+                                "/api/v1/ticket-types/**"
+                        ).permitAll()
+
+                        // Only ORGANIZER can access organizer endpoints
+                        .requestMatchers(
+                                "/api/v1/organizer/**"
+                        ).hasRole("ORGANIZER")
+
+                        // Only CUSTOMER can access booking endpoints
+                        .requestMatchers(
+                                "/api/v1/bookings/**"
+                        ).hasRole("CUSTOMER")
+
+                        // All remaining endpoints require authentication
                         .anyRequest().authenticated()
                 )
 
-                // Process JWTs before Spring Security's username/password filter.
+                // Process JWTs before Spring Security's username/password filter
                 .addFilterBefore(
                         new JwtAuthenticationFilter(
                                 jwtService,
