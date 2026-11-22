@@ -4,6 +4,8 @@ import com.tapan.eventticketingengine.auth.exception.EmailAlreadyRegisteredExcep
 
 import com.tapan.eventticketingengine.event.exception.EventNotDraftException;
 import com.tapan.eventticketingengine.event.exception.EventNotFoundException;
+import com.tapan.eventticketingengine.ticket.exception.DuplicateTicketTypeException;
+import com.tapan.eventticketingengine.ticket.exception.TicketTypeNotFoundException;
 import jakarta.servlet.http.HttpServletRequest;
 
 import org.slf4j.Logger;
@@ -33,6 +35,32 @@ public class GlobalExceptionHandler {
 
     public GlobalExceptionHandler(Clock clock) {
         this.clock = clock;
+    }
+
+    @ExceptionHandler(TicketTypeNotFoundException.class)
+    public ResponseEntity<ApiErrorResponse> handleTicketTypeNotFound(
+            TicketTypeNotFoundException exception,
+            HttpServletRequest request
+    ) {
+        return buildResponse(
+                HttpStatus.NOT_FOUND,
+                exception.getMessage(),
+                request.getRequestURI(),
+                Map.of()
+        );
+    }
+
+    @ExceptionHandler(DuplicateTicketTypeException.class)
+    public ResponseEntity<ApiErrorResponse> handleDuplicateTicketType(
+            DuplicateTicketTypeException exception,
+            HttpServletRequest request
+    ) {
+        return buildResponse(
+                HttpStatus.CONFLICT,
+                exception.getMessage(),
+                request.getRequestURI(),
+                Map.of()
+        );
     }
 
     @ExceptionHandler(EventNotFoundException.class)
