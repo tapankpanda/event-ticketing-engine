@@ -2,6 +2,8 @@ package com.tapan.eventticketingengine.common.exception;
 
 import com.tapan.eventticketingengine.auth.exception.EmailAlreadyRegisteredException;
 
+import com.tapan.eventticketingengine.booking.exception.IdempotencyKeyConflictException;
+import com.tapan.eventticketingengine.booking.exception.InsufficientInventoryException;
 import com.tapan.eventticketingengine.event.exception.EventNotDraftException;
 import com.tapan.eventticketingengine.event.exception.EventNotFoundException;
 import com.tapan.eventticketingengine.ticket.exception.DuplicateTicketTypeException;
@@ -53,6 +55,32 @@ public class GlobalExceptionHandler {
     @ExceptionHandler(DuplicateTicketTypeException.class)
     public ResponseEntity<ApiErrorResponse> handleDuplicateTicketType(
             DuplicateTicketTypeException exception,
+            HttpServletRequest request
+    ) {
+        return buildResponse(
+                HttpStatus.CONFLICT,
+                exception.getMessage(),
+                request.getRequestURI(),
+                Map.of()
+        );
+    }
+
+    @ExceptionHandler(InsufficientInventoryException.class)
+    public ResponseEntity<ApiErrorResponse> handleInsufficientInventory(
+            InsufficientInventoryException exception,
+            HttpServletRequest request
+    ) {
+        return buildResponse(
+                HttpStatus.CONFLICT,
+                exception.getMessage(),
+                request.getRequestURI(),
+                Map.of()
+        );
+    }
+
+    @ExceptionHandler(IdempotencyKeyConflictException.class)
+    public ResponseEntity<ApiErrorResponse> handleIdempotencyKeyConflict(
+            IdempotencyKeyConflictException exception,
             HttpServletRequest request
     ) {
         return buildResponse(
